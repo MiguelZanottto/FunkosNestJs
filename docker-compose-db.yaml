@@ -1,0 +1,25 @@
+services:
+  # PostgreSQL
+  postgres-db:
+    container_name: tienda-db_postgres
+    image: postgres:12-alpine
+    restart: always
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - tienda-db-data:/var/lib/postgresql/data
+      - ./database/tienda.sql:/docker-entrypoint-initdb.d/tienda.sql
+    networks:
+      - tienda-network
+
+networks:
+  tienda-network:
+    driver: bridge
+
+volumes:
+  tienda-db-data:
