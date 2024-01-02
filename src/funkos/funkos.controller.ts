@@ -3,6 +3,7 @@ import { FunkosService } from './funkos.service';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
 import { NumericIdValidatorPipe } from '../pipes/validations/numeric-id-validator/numeric-id-validator.pipe';
+import { BodyNotEmptyValidatorPipe } from '../pipes/validations/body-not-empty-validator/body-not-empty-validator.pipe';
 
 @Controller('funkos')
 export class FunkosController {
@@ -26,13 +27,13 @@ export class FunkosController {
   @Post()
   @HttpCode(201)
   async create(@Body() createFunkoDto: CreateFunkoDto) {
-    this.logger.log(`Creating funk ${createFunkoDto}`)
+    this.logger.log(`Creating funk`)
     return await this.funkosService.create(createFunkoDto);
   }
 
   @Put(':id')
-  async update(@Param('id', new NumericIdValidatorPipe()) id: number, @Body() updateFunkoDto: UpdateFunkoDto) {
-    this.logger.log(`Updating funk by id: ${id} with funk: ${updateFunkoDto}`);
+  async update(@Param('id', new NumericIdValidatorPipe()) id: number, @Body(new BodyNotEmptyValidatorPipe()) updateFunkoDto: UpdateFunkoDto) {
+    this.logger.log(`Updating funk by id: ${id}`);
     return await this.funkosService.update(id, updateFunkoDto);
   }
 

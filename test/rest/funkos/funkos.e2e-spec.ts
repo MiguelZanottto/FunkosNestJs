@@ -98,7 +98,7 @@ describe('FunkosController (e2e)', () => {
       })
     })
 
-    it("should throw an error if the category doesn't exist", async () => {
+    it("should throw an error if the funk doesn't exist", async () => {
       mockFunkosService.findOne.mockRejectedValue(new NotFoundException());
 
       await request(app.getHttpServer())
@@ -136,11 +136,11 @@ describe('FunkosController (e2e)', () => {
       });
     });
 
-    it("should thrown an error if the category doesn't exist", async () => {
+    it("should thrown an error if the funk doesn't exist", async () => {
       mockFunkosService.update.mockRejectedValue(new NotFoundException());
       await request(app.getHttpServer())
         .put(`${myEndpoint}/${funkoResponseDto.id}`)
-        .send(mockFunkosService)
+        .send(updateFunkoDto)
         .expect(404);
     });
   });
@@ -154,7 +154,7 @@ describe('FunkosController (e2e)', () => {
         .expect(204);
     });
 
-    it("should throw an error if the category doesn't exist", async () => {
+    it("should throw an error if the funk doesn't exist", async () => {
       mockFunkosService.remove.mockRejectedValue(new NotFoundException());
       await request(app.getHttpServer())
         .delete(`${myEndpoint}/${funkoResponseDto.id}`)

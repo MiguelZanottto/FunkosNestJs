@@ -190,11 +190,6 @@ describe('CategoriasService', () => {
       await expect(service.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoryDto)).rejects.toThrow(NotFoundException)
     });
 
-    it("should thrown an error if the request is empty", async ()  => {
-      jest.spyOn(repo, 'findOneBy').mockResolvedValue(new Categoria());
-      await expect(service.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', null)).rejects.toThrow(BadRequestException)
-    });
-
     it("should thrown an error if the category's name already exist on BD", async ()  => {
       const updateCategoryDto: UpdateCategoriaDto = {
         nombre : 'Categoria Test'

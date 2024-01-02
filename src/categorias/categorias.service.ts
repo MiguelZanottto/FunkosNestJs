@@ -35,7 +35,7 @@ export class CategoriasService {
   }
 
   async create(createCategoriaDto: CreateCategoriaDto) : Promise<ResponseCategoriaDto> {
-    this.logger.log(`Creando la categoria ${createCategoriaDto}`)
+    this.logger.log(`Creando la categoria ${JSON.stringify(createCategoriaDto)}`)
     const categoriaActual: Categoria = await this.exists(createCategoriaDto.nombre);
     if(categoriaActual){
       this.logger.log(`La categoria con nombre ${categoriaActual.nombre} ya existe en la BD`)
@@ -50,12 +50,8 @@ export class CategoriasService {
   }
 
   async update(id: string, updateCategoriaDto: UpdateCategoriaDto): Promise<ResponseCategoriaDto> {
-    this.logger.log(`Actualizando la categoria con id: ${id}`)
+    this.logger.log(`Actualizando la categoria con id: ${id} con categoria: ${JSON.stringify(updateCategoriaDto)}`)
     const categoriaActual: Categoria = await this.findOne(id);
-    if(!updateCategoriaDto || Object.keys(updateCategoriaDto).length === 0){
-      this.logger.log(`No se ha enviado ningun dato para actualizar`)
-      throw new BadRequestException('No se ha enviado ningun dato para actualizar');
-    }
     if(updateCategoriaDto.nombre){
       const categoria = await this.exists(updateCategoriaDto.nombre);
       if(categoria && categoria.id != id){

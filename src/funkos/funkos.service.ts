@@ -55,10 +55,6 @@ export class FunkosService {
     this.logger.log(
       `Actualizando Funko con id: ${id} con funko: ${JSON.stringify(updateFunkoDto)}`
     );
-    if (!updateFunkoDto || Object.keys(updateFunkoDto).length === 0) {
-      this.logger.log(`No se ha enviado ningun dato para actualizar`)
-      throw new BadRequestException('No se ha enviado ningun dato para actualizar');
-    }
     const funkoActual = await this.exists(id);
     let categoria: Categoria;
     if(updateFunkoDto.categoria){
@@ -68,7 +64,7 @@ export class FunkosService {
     }
     const funkoActualizado = this.funkoMapper.toUpdateEntity(funkoActual, updateFunkoDto, categoria);
     const res = await this.funkoRepository.save(funkoActualizado);
-    return this.funkoMapper.toResponseDto(funkoActualizado);
+    return this.funkoMapper.toResponseDto(res);
   }
 
   public async findCategoria(nombreCategoria: string): Promise<Categoria>{
@@ -102,7 +98,11 @@ export class FunkosService {
   }
 
   public async exists(id:number): Promise<Funko>{
-    const funko = await this.funkoRepository.findOneBy({id})
+    const funko = await this.funkoRepository
+      .createQueryBuilder('funko')
+      .leftJoinAndSelect('funko.categoria', 'categoria')
+      .where('funko.id = :id', {id})
+      .getOne()
     if (!funko){
       this.logger.log(`No se ha encontrado el funko con id: ${id}`)
       throw new NotFoundException(`Funko con id: ${id} no encontrado`)

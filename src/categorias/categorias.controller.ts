@@ -3,6 +3,7 @@ import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { UuidIdValidatorPipe } from '../pipes/validations/uuid-id-validator/uuid-id-validator.pipe';
+import { BodyNotEmptyValidatorPipe } from '../pipes/validations/body-not-empty-validator/body-not-empty-validator.pipe';
 
 @Controller('categorias')
 export class CategoriasController {
@@ -29,7 +30,7 @@ export class CategoriasController {
   }
 
   @Put(':id')
-  async update(@Param('id', new UuidIdValidatorPipe()) id: string, @Body() updateCategoriaDto: UpdateCategoriaDto) {
+  async update(@Param('id', new UuidIdValidatorPipe()) id: string, @Body(new BodyNotEmptyValidatorPipe()) updateCategoriaDto: UpdateCategoriaDto) {
     this.logger.log(`Updating category by id ${id} from database`)
     return await this.categoriasService.update(id, updateCategoriaDto);
   }
