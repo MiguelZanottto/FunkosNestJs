@@ -1,10 +1,9 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateFunkoDto } from './create-funko.dto';
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
+import { IsAlpha, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Length, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateFunkoDto extends PartialType(CreateFunkoDto) {
-  @IsNotEmpty({message: "El nombre no puede estar vacia"})
   @IsString({message: "El nombre solo puede ser un string"})
   @Length(3, 50, { message: 'El nombre debe tener entre 3 y 50 caracteres'})
   @Transform((nombre) => nombre.value.trim())

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, ParseIntPipe, Logger, BadRequestException, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, ParseIntPipe, Logger, Put, NotAcceptableException } from '@nestjs/common';
 import { FunkosService } from './funkos.service';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
@@ -17,7 +17,11 @@ export class FunkosController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', new ParseIntPipe({
+    exceptionFactory: () => {
+      throw new NotAcceptableException('EL ID debe ser un numero entero')
+    }
+  })) id: number) {
     this.logger.log(`Searching funk by id: ${id}`)
     return await this.funkosService.findOne(id);
   }
@@ -30,14 +34,22 @@ export class FunkosController {
   }
 
   @Put(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updateFunkoDto: UpdateFunkoDto) {
+  async update(@Param('id', new ParseIntPipe({
+    exceptionFactory: () => {
+      throw new NotAcceptableException('EL ID debe ser un numero entero')
+    }
+  })) id: number, @Body() updateFunkoDto: UpdateFunkoDto) {
     this.logger.log(`Updating funk by id: ${id} with funk: ${updateFunkoDto}`)
     return await this.funkosService.update(id, updateFunkoDto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', new ParseIntPipe({
+    exceptionFactory: () => {
+      throw new NotAcceptableException('EL ID debe ser un numero entero')
+    }
+  })) id: number) {
     this.logger.log(`Deleting funk by id: ${id}`)
     return await this.funkosService.remove(id);
   }
