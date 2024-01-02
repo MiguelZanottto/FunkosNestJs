@@ -42,7 +42,7 @@ export class CategoriasService {
       throw new BadRequestException(`La categoria con nombre ${categoriaActual.nombre} ya existe en la BD`)
     }
     const newCategoria = this.categoriasMapper.toEntityCreate(createCategoriaDto);
-    const res = await this.categoriasRepository.save({
+    const res : Categoria = await this.categoriasRepository.save({
       ...newCategoria,
       id: uuidv4(),
     })
