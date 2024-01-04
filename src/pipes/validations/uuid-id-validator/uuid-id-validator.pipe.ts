@@ -1,4 +1,4 @@
-import { ArgumentMetadata, Injectable, NotAcceptableException, ParseUUIDPipe, PipeTransform } from '@nestjs/common';
+import { ArgumentMetadata, BadRequestException, Injectable, ParseUUIDPipe, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class UuidIdValidatorPipe implements PipeTransform {
@@ -9,7 +9,7 @@ export class UuidIdValidatorPipe implements PipeTransform {
     try {
       return await uuidPipe.transform(id, metadata);
     } catch (error) {
-      throw new NotAcceptableException(this.errorMessage);
+      throw new BadRequestException(this.errorMessage);
     }
   }
 }

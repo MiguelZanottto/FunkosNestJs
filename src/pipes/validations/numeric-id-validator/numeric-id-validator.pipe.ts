@@ -1,4 +1,4 @@
-import { ArgumentMetadata, Injectable, NotAcceptableException, ParseIntPipe, PipeTransform } from '@nestjs/common';
+import { ArgumentMetadata, BadRequestException, Injectable, ParseIntPipe, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class NumericIdValidatorPipe implements PipeTransform {
@@ -11,10 +11,10 @@ export class NumericIdValidatorPipe implements PipeTransform {
       if (parsedValue > 0) {
         return parsedValue;
       } else {
-        throw new NotAcceptableException(this.errorMessage);
+        throw new BadRequestException(this.errorMessage);
       }
     } catch (error) {
-      throw new NotAcceptableException(this.errorMessage);
+      throw new BadRequestException(this.errorMessage);
     }
   }
 }

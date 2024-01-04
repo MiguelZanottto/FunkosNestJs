@@ -8,10 +8,12 @@ import { ResponseCategoriaDto } from './dto/response-categoria.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
+import { Funko } from '../funkos/entities/funko.entity';
 
 describe('CategoriasService', () => {
   let service: CategoriasService;
   let repo: Repository<Categoria>;
+  let funkoRepository: Repository<Funko>
   let mapper: CategoriasMapper;
 
   const categoryMapper = {
@@ -25,12 +27,16 @@ describe('CategoriasService', () => {
       providers: [CategoriasService,
         {provide: CategoriasMapper, useValue: categoryMapper},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
+        {provide: getRepositoryToken(Funko), useClass: Repository},
       ],
     }).compile();
 
     service = module.get<CategoriasService>(CategoriasService);
     repo = module.get<Repository<Categoria>>(
       getRepositoryToken(Categoria),
+    )
+    funkoRepository = module.get<Repository<Funko>>(
+      getRepositoryToken(Funko),
     )
     mapper = module.get<CategoriasMapper>(CategoriasMapper);
   });
@@ -222,11 +228,21 @@ describe('CategoriasService', () => {
       categoryToDelete.isDeleted = false;
       categoryToDelete.funkos = [];
 
+      const mockQueryBuilder = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      }
+
       const result: ResponseCategoriaDto = new ResponseCategoriaDto();
       result.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
       result.nombre = 'Categoria 1';
       result.isDeleted = false;
 
+      jest
+        .spyOn(funkoRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any)
       jest.spyOn(mapper, 'toResponseDto').mockReturnValue(result);
       jest.spyOn(repo, 'findOneBy').mockResolvedValue(categoryToDelete);
       jest.spyOn(repo, 'remove').mockResolvedValue(categoryToDelete);

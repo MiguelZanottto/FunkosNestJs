@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseCategoriaDto } from './dto/response-categoria.dto';
+import { Funko } from '../funkos/entities/funko.entity';
 
 
 @Injectable()
@@ -16,6 +17,8 @@ export class CategoriasService {
   constructor(
     @InjectRepository(Categoria)
     private readonly categoriasRepository : Repository<Categoria>,
+    @InjectRepository(Funko)
+    private readonly funkoRepository : Repository<Funko>,
     private readonly categoriasMapper : CategoriasMapper) {}
 
   async findAll() {
@@ -68,6 +71,14 @@ export class CategoriasService {
   async remove(id: string) {
     this.logger.log(`Borrando la categoria con id: ${id}`);
     const categoriaToDelete = await this.findOne(id);
+
+    await this.funkoRepository
+      .createQueryBuilder()
+      .update(Funko)
+      .set({categoria : null })
+      .where('categoria = :id', {id})
+      .execute();
+
     return this.categoriasMapper.toResponseDto(
       await this.categoriasRepository.remove(categoriaToDelete)
     );
@@ -80,7 +91,6 @@ export class CategoriasService {
     await this.categoriasRepository.save({...categoriaToDelete, updatedAt: new Date(), isDeleted: true})
     );
   }
-
 
   public async exists(nombreCategoria: string): Promise<Categoria>{
     return await this.categoriasRepository
