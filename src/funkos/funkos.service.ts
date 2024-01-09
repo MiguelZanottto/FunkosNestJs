@@ -7,7 +7,9 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Categoria } from '../categorias/entities/categoria.entity';
 import { StorageService } from '../storage/storage.service';
-import { Request } from 'express'
+import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
+import { Notificacion, NotificacionTipo } from '../websockets/notifications/models/notificacion.model';
+import { FunkoResponseDto } from './dto/response-funko.dto';
 
 @Injectable()
 export class FunkosService {
@@ -18,23 +20,23 @@ export class FunkosService {
               @InjectRepository(Categoria)
               private readonly categoriaRepository: Repository<Categoria>,
               private readonly storageService:StorageService,
-              private readonly funkoMapper: FunkosMapper,) {
+              private readonly funkoMapper: FunkosMapper,
+              private readonly notificationsGateway: NotificationsGateway) {
   }
   async findAll() {
     this.logger.log('Mostrando todos los funkos');
-    const funkos = await this.funkoRepository
+    const funkos : Funko[] = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
       .orderBy('funko.id', 'ASC')
       .getMany();
 
-    return funkos.map((funko) => this.funkoMapper.toResponseDto(funko));
+    return funkos.map((funko : Funko) => this.funkoMapper.toResponseDto(funko));
   }
-
 
   async findOne(id: number) {
     this.logger.log(`Buscando un Funko con id: ${id}`);
-    const funkoFound = await this.funkoRepository
+    const funkoFound : Funko = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
       .where('funko.id = :id', {id})
@@ -43,35 +45,40 @@ export class FunkosService {
       this.logger.log(`Funko con id ${id} no encontrado`)
       throw new NotFoundException(`Funko con id ${id} no encontrado`)
     }
+
     return this.funkoMapper.toResponseDto(funkoFound);
   }
 
   async create(createFunkoDto: CreateFunkoDto) {
     this.logger.log(`Creando funko ${JSON.stringify(createFunkoDto)}`);
-    const categoria = await this.findCategoria(createFunkoDto.categoria)
-    const funkoCreado: Funko = this.funkoMapper.toCreateEntity(createFunkoDto, categoria);
-    const res = await this.funkoRepository.save(funkoCreado);
-    return this.funkoMapper.toResponseDto(res);
+    const categoria : Categoria = await this.findCategoria(createFunkoDto.categoria)
+    const funkoToCreate: Funko = this.funkoMapper.toCreateEntity(createFunkoDto, categoria);
+    const funkoCreated : Funko = await this.funkoRepository.save(funkoToCreate);
+    const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoCreated);
+    this.onChange(NotificacionTipo.CREATE, funkoResponse);
+    return funkoResponse;
   }
 
   async update(id: number, updateFunkoDto: UpdateFunkoDto) {
     this.logger.log(
       `Actualizando Funko con id: ${id} con funko: ${JSON.stringify(updateFunkoDto)}`
     );
-    const funkoActual = await this.exists(id);
+    const funkoActual : Funko = await this.exists(id);
     let categoria: Categoria;
     if(updateFunkoDto.categoria){
       categoria = await this.findCategoria(updateFunkoDto.categoria)
     } else {
       categoria = funkoActual.categoria;
     }
-    const funkoActualizado = this.funkoMapper.toUpdateEntity(funkoActual, updateFunkoDto, categoria);
-    const res = await this.funkoRepository.save(funkoActualizado);
-    return this.funkoMapper.toResponseDto(res);
+    const funkoToUpdated : Funko = this.funkoMapper.toUpdateEntity(funkoActual, updateFunkoDto, categoria);
+    const funkoUpdated : Funko = await this.funkoRepository.save(funkoToUpdated);
+    const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoUpdated);
+    this.onChange(NotificacionTipo.UPDATE, funkoResponse);
+    return funkoResponse;
   }
 
   public async findCategoria(nombreCategoria: string): Promise<Categoria>{
-    const categoriaFound = await this.categoriaRepository
+    const categoriaFound : Categoria = await this.categoriaRepository
       .createQueryBuilder()
       .where('UPPER(nombre) = UPPER(:nombre)', {
         nombre: nombreCategoria,
@@ -86,23 +93,23 @@ export class FunkosService {
 
   async remove(id: number) {
     this.logger.log(`Borrando Funko con id ${id}`)
-    const funkoToDelete = await this.exists(id)
-
+    const funkoToDelete : Funko = await this.exists(id)
     if(funkoToDelete.imagen && funkoToDelete.imagen !=  Funko.IMAGE_DEFAULT) {
       this.logger.log(`Borrando imagen ${funkoToDelete.imagen}`)
       this.storageService.removeFile(funkoToDelete.imagen)
     }
-    return this.funkoMapper.toResponseDto(
-      await this.funkoRepository.remove(funkoToDelete)
-    );
+    const funkoDeleted : Funko = await this.funkoRepository.remove(funkoToDelete);
+    const funkoResponse : FunkoResponseDto = {...this.funkoMapper.toResponseDto(funkoDeleted), id : id, isDeleted : true};
+    this.onChange(NotificacionTipo.DELETE, funkoResponse);
+    return funkoResponse;
   }
 
   async removeSoft(id:number){
-    const funkoToDelete = await this.exists(id);
-    funkoToDelete.isDeleted = true;
-    return this.funkoMapper.toResponseDto(
-      await this.funkoRepository.save(funkoToDelete)
-    );
+    const funkoToDelete : Funko = await this.exists(id);
+    const funkoDeleted : Funko = await this.funkoRepository.save({...funkoToDelete, isDeleted: true, updatedAt: Date.now()});
+    const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoDeleted);
+    this.onChange(NotificacionTipo.DELETE, funkoResponse);
+    return funkoResponse;
   }
 
   public async exists(id:number): Promise<Funko>{
@@ -127,7 +134,7 @@ export class FunkosService {
 
     if (funkToUpdate.imagen !== Funko.IMAGE_DEFAULT){
       this.logger.log(`Borrando imagen ${funkToUpdate.imagen}`)
-      let imagePath = funkToUpdate.imagen;
+      let imagePath : string = funkToUpdate.imagen;
 
       try {
         this.storageService.removeFile(imagePath);
@@ -141,7 +148,19 @@ export class FunkosService {
     }
 
     funkToUpdate.imagen = file.filename;
-    const funkUpdated = await this.funkoRepository.save(funkToUpdate);
-    return this.funkoMapper.toResponseDto(funkUpdated);
+    const funkUpdated : Funko = await this.funkoRepository.save(funkToUpdate);
+    const funkResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkUpdated);
+    this.onChange(NotificacionTipo.UPDATE, funkResponse)
+    return funkResponse;
+  }
+
+  private onChange(tipo: NotificacionTipo, data: FunkoResponseDto){
+    const notificacion : Notificacion<FunkoResponseDto> = new Notificacion <FunkoResponseDto>(
+      'FUNKOS',
+      tipo,
+      data,
+      new Date(),
+    )
+    this.notificationsGateway.sendMessage(notificacion)
   }
 }

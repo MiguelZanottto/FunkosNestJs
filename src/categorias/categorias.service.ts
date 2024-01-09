@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseCategoriaDto } from './dto/response-categoria.dto';
 import { Funko } from '../funkos/entities/funko.entity';
+import { Notificacion, NotificacionTipo } from '../websockets/notifications/models/notificacion.model';
+import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 
 
 @Injectable()
@@ -19,12 +21,13 @@ export class CategoriasService {
     private readonly categoriasRepository : Repository<Categoria>,
     @InjectRepository(Funko)
     private readonly funkoRepository : Repository<Funko>,
-    private readonly categoriasMapper : CategoriasMapper) {}
+    private readonly categoriasMapper : CategoriasMapper,
+    private readonly notificationsGateway: NotificationsGateway) {}
 
   async findAll() {
     this.logger.log("Buscando todas las categorias");
-    const categorias = await this.categoriasRepository.find();
-    return categorias.map((categoria) => this.categoriasMapper.toResponseDto(categoria));
+    const categorias : Categoria[] = await this.categoriasRepository.find();
+    return categorias.map((categoria : Categoria) => this.categoriasMapper.toResponseDto(categoria));
   }
 
   async findOne(id: string) {
@@ -44,12 +47,14 @@ export class CategoriasService {
       this.logger.log(`La categoria con nombre ${categoriaActual.nombre} ya existe en la BD`)
       throw new BadRequestException(`La categoria con nombre ${categoriaActual.nombre} ya existe en la BD`)
     }
-    const newCategoria = this.categoriasMapper.toEntityCreate(createCategoriaDto);
-    const res : Categoria = await this.categoriasRepository.save({
-      ...newCategoria,
+    const categoryToCreate = this.categoriasMapper.toEntityCreate(createCategoriaDto);
+    const categoryCreated : Categoria = await this.categoriasRepository.save({
+      ...categoryToCreate,
       id: uuidv4(),
     })
-    return this.categoriasMapper.toResponseDto(res);
+    const categoryResponse = this.categoriasMapper.toResponseDto(categoryCreated);
+    this.onChange(NotificacionTipo.CREATE, categoryResponse);
+    return categoryResponse;
   }
 
   async update(id: string, updateCategoriaDto: UpdateCategoriaDto): Promise<ResponseCategoriaDto> {
@@ -62,15 +67,16 @@ export class CategoriasService {
         throw new BadRequestException(`La categoria ${updateCategoriaDto.nombre} ya existe en la BD`)
       }
     }
-    const categoriaActualizada = this.categoriasMapper.toEntityUpdate(updateCategoriaDto, categoriaActual);
-    return this.categoriasMapper.toResponseDto(
-      await this.categoriasRepository.save(categoriaActualizada)
-    );
+    const categoriaToUpdate : Categoria = this.categoriasMapper.toEntityUpdate(updateCategoriaDto, categoriaActual);
+    const categoriaUpdated : Categoria =  await this.categoriasRepository.save(categoriaToUpdate)
+    const categoriaResponse : ResponseCategoriaDto = this.categoriasMapper.toResponseDto(categoriaUpdated);
+    this.onChange(NotificacionTipo.UPDATE, categoriaResponse);
+    return categoriaResponse;
   }
 
   async remove(id: string) {
     this.logger.log(`Borrando la categoria con id: ${id}`);
-    const categoriaToDelete = await this.findOne(id);
+    const categoriaToDelete : Categoria = await this.findOne(id);
 
     await this.funkoRepository
       .createQueryBuilder()
@@ -79,17 +85,19 @@ export class CategoriasService {
       .where('categoria = :id', {id})
       .execute();
 
-    return this.categoriasMapper.toResponseDto(
-      await this.categoriasRepository.remove(categoriaToDelete)
-    );
+    const categoriaDeleted : Categoria = await this.categoriasRepository.remove(categoriaToDelete);
+    const categoriaResponse : ResponseCategoriaDto = {...this.categoriasMapper.toResponseDto(categoriaDeleted), id: id, isDeleted: true};
+    this.onChange(NotificacionTipo.DELETE, categoriaResponse);
+    return categoriaResponse;
   }
 
   async removeSoft(id: string): Promise <ResponseCategoriaDto> {
     this.logger.log(`Borrando la categoria con id: ${id}`)
-    const categoriaToDelete = await this.findOne(id)
-    return this.categoriasMapper.toResponseDto(
-    await this.categoriasRepository.save({...categoriaToDelete, updatedAt: new Date(), isDeleted: true})
-    );
+    const categoriaToDelete : Categoria = await this.findOne(id)
+    const categoriaDeleted : Categoria = await this.categoriasRepository.save({...categoriaToDelete, updatedAt: new Date(), isDeleted: true});
+    const categoryReponse : ResponseCategoriaDto = this.categoriasMapper.toResponseDto(categoriaDeleted);
+    this.onChange(NotificacionTipo.DELETE, categoryReponse);
+    return categoryReponse;
   }
 
   public async exists(nombreCategoria: string): Promise<Categoria>{
@@ -99,6 +107,16 @@ export class CategoriasService {
         nombre: nombreCategoria.toLowerCase(),
       })
       .getOne()
+  }
+
+  private onChange(tipo: NotificacionTipo, data: ResponseCategoriaDto){
+    const notificacion : Notificacion<ResponseCategoriaDto> = new Notificacion <ResponseCategoriaDto>(
+      'CATEGORIAS',
+      tipo,
+      data,
+      new Date(),
+    )
+    this.notificationsGateway.sendMessage(notificacion)
   }
 }
 

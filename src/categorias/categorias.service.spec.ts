@@ -9,17 +9,23 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
 import { Funko } from '../funkos/entities/funko.entity';
+import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 
 describe('CategoriasService', () => {
   let service: CategoriasService;
   let repo: Repository<Categoria>;
-  let funkoRepository: Repository<Funko>
+  let funkoRepository: Repository<Funko>;
   let mapper: CategoriasMapper;
+  let notificationsGateway: NotificationsGateway;
 
   const categoryMapper = {
     toEntityCreate: jest.fn(),
     toEntityUpdate: jest.fn(),
     toResponseDto: jest.fn(),
+  }
+
+  const notificationsGatewayMock = {
+    sendMessage: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -28,6 +34,7 @@ describe('CategoriasService', () => {
         {provide: CategoriasMapper, useValue: categoryMapper},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: getRepositoryToken(Funko), useClass: Repository},
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock}
       ],
     }).compile();
 
@@ -39,6 +46,9 @@ describe('CategoriasService', () => {
       getRepositoryToken(Funko),
     )
     mapper = module.get<CategoriasMapper>(CategoriasMapper);
+    notificationsGateway = module.get<NotificationsGateway>(
+      NotificationsGateway,
+    )
   });
 
   it('should be defined', () => {
@@ -238,7 +248,7 @@ describe('CategoriasService', () => {
       const result: ResponseCategoriaDto = new ResponseCategoriaDto();
       result.id = 'd69cf3db-b77d-4181-b3cd-5ca8107fb6a9';
       result.nombre = 'Categoria 1';
-      result.isDeleted = false;
+      result.isDeleted = true;
 
       jest
         .spyOn(funkoRepository, 'createQueryBuilder')
@@ -248,6 +258,7 @@ describe('CategoriasService', () => {
       jest.spyOn(repo, 'remove').mockResolvedValue(categoryToDelete);
 
       expect(await service.remove('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9')).toEqual(result)
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
 
     it("should thown an error if the category doesn't exist", async () => {
