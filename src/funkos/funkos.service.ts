@@ -6,6 +6,8 @@ import { FunkosMapper } from './mappers/funkos.mapper';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Categoria } from '../categorias/entities/categoria.entity';
+import { StorageService } from '../storage/storage.service';
+import { Request } from 'express'
 
 @Injectable()
 export class FunkosService {
@@ -15,6 +17,7 @@ export class FunkosService {
               private readonly funkoRepository:Repository<Funko>,
               @InjectRepository(Categoria)
               private readonly categoriaRepository: Repository<Categoria>,
+              private readonly storageService:StorageService,
               private readonly funkoMapper: FunkosMapper,) {
   }
   async findAll() {
@@ -84,6 +87,11 @@ export class FunkosService {
   async remove(id: number) {
     this.logger.log(`Borrando Funko con id ${id}`)
     const funkoToDelete = await this.exists(id)
+
+    if(funkoToDelete.imagen && funkoToDelete.imagen !=  Funko.IMAGE_DEFAULT) {
+      this.logger.log(`Borrando imagen ${funkoToDelete.imagen}`)
+      this.storageService.removeFile(funkoToDelete.imagen)
+    }
     return this.funkoMapper.toResponseDto(
       await this.funkoRepository.remove(funkoToDelete)
     );
@@ -108,5 +116,32 @@ export class FunkosService {
       throw new NotFoundException(`Funko con id: ${id} no encontrado`)
     }
     return funko;
+  }
+
+  public async updateImage(
+    id:number,
+    file: Express.Multer.File
+  ) {
+    this.logger.log(`Update image funko by id: ${id}`)
+    const funkToUpdate = await this.exists(id);
+
+    if (funkToUpdate.imagen !== Funko.IMAGE_DEFAULT){
+      this.logger.log(`Borrando imagen ${funkToUpdate.imagen}`)
+      let imagePath = funkToUpdate.imagen;
+
+      try {
+        this.storageService.removeFile(imagePath);
+      } catch (error){
+        this.logger.error(error);
+      }
+    }
+
+    if (!file){
+      throw new BadRequestException('Fichero no encontrado.')
+    }
+
+    funkToUpdate.imagen = file.filename;
+    const funkUpdated = await this.funkoRepository.save(funkToUpdate);
+    return this.funkoMapper.toResponseDto(funkUpdated);
   }
 }

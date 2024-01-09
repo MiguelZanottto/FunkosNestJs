@@ -5,11 +5,13 @@ import { FunkosMapper } from './mappers/funkos.mapper';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Funko } from './entities/funko.entity';
 import { Categoria } from '../categorias/entities/categoria.entity';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([Funko]),
-    TypeOrmModule.forFeature([Categoria])
+    TypeOrmModule.forFeature([Categoria]),
+    StorageModule,
   ],
   controllers: [FunkosController],
   providers: [FunkosService, FunkosMapper],

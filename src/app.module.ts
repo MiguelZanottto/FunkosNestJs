@@ -5,6 +5,7 @@ import { FunkosModule } from './funkos/funkos.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CategoriasModule } from './categorias/categorias.module';
 import { ConfigModule } from '@nestjs/config';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     FunkosModule,
     CategoriasModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

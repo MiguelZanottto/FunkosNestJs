@@ -17,9 +17,6 @@ export class UpdateFunkoDto extends PartialType(CreateFunkoDto) {
   @IsInt({message: "La cantidad solo puede ser un número entero"})
   @IsOptional()
   cantidad?:number;
-  @IsOptional()
-  @IsString({message: "La imagen solo puede ser un string"})
-  imagen?: string;
   @IsNotEmpty({message: "La categoria no puede estar vacia"})
   @IsString({message: "La categoria solo puede ser un string"})
   @Transform((categoria) => categoria.value.trim())
