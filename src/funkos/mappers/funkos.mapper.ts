@@ -48,7 +48,9 @@ export class FunkosMapper{
     }
     response.precio = funko.precio;
     response.cantidad = funko.cantidad;
-    response.imagen = funko.imagen == Funko.IMAGE_DEFAULT ? funko.imagen : `${process.env.API_PROTOCOL}://${process.env.API_HOST}:${process.env.API_PORT}/${process.env.API_VERSION}/storage/${funko.imagen}`;
+    response.imagen = funko.imagen == Funko.IMAGE_DEFAULT
+      ? funko.imagen
+      : `${process.env.API_PROTOCOL || 'http'}://${process.env.API_HOST || 'localhost'}:${process.env.API_PORT || '3000'}/${process.env.API_VERSION || 'v1'}/storage/${funko.imagen}`;
     response.isDeleted = funko.isDeleted;
     return response
     }
