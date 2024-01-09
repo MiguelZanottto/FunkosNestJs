@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, HttpCode, Logger, Put, Req, UploadedFile, ParseIntPipe, BadRequestException, UseInterceptors, Patch} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, HttpCode, Logger, Put, Req, UploadedFile, ParseIntPipe, BadRequestException, UseInterceptors, Patch, UseGuards} from '@nestjs/common';
 import { FunkosService } from './funkos.service';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
@@ -6,9 +6,9 @@ import { NumericIdValidatorPipe } from '../pipes/validations/numeric-id-validato
 import { BodyNotEmptyValidatorPipe } from '../pipes/validations/body-not-empty-validator/body-not-empty-validator.pipe';
 import { extname, parse } from 'path';
 import { diskStorage } from 'multer';
-import { Request } from 'express'
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v4 as uuidv4 } from 'uuid';
+import { FunkoExistsGuard } from './guards/funko-exists.guard';
 
 @Controller('funkos')
 export class FunkosController {
@@ -50,6 +50,7 @@ export class FunkosController {
   }
 
   @Patch('/imagen/:id')
+  @UseGuards(FunkoExistsGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
