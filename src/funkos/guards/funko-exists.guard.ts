@@ -16,11 +16,9 @@ export class FunkoExistsGuard implements CanActivate {
       throw new BadRequestException('El id del funko no es válido')
     }
     return this.funkosService.exists(funkId).then((exists) => {
-      if (!exists) {
-        throw new BadRequestException('El ID del funko no existe')
-      } else {
-        return true;
-      }
+      return true;
+    }).catch(error => {
+      throw new BadRequestException('El ID del funko no existe')
     })
   }
 }
