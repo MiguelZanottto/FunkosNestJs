@@ -16,6 +16,7 @@ describe('FunkosController', () => {
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    updateImage: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -69,7 +70,6 @@ describe('FunkosController', () => {
         nombre: 'test',
         precio: 100,
         cantidad: 10,
-        imagen: 'test.jpg',
         categoria: 'test',
       }
       const expectedResult : FunkoResponseDto = new FunkoResponseDto();
@@ -89,7 +89,6 @@ describe('FunkosController', () => {
         nombre: 'test',
         precio: 100,
         cantidad: 10,
-        imagen: 'test.jpg',
         categoria: 'test',
       }
       const expectedResult : FunkoResponseDto = new FunkoResponseDto();
@@ -123,4 +122,21 @@ describe('FunkosController', () => {
       await expect(controller.remove(1)).rejects.toThrow(NotFoundException);
     });
   })
+
+    describe('updateImage', () => {
+      it('should update a funk image', async () => {
+        const mockId = 1;
+        const mockFile = {} as Express.Multer.File;
+        const mockResult: FunkoResponseDto = new FunkoResponseDto();
+
+        jest.spyOn(service, 'updateImage').mockResolvedValue(mockResult);
+
+        await controller.updateImage(mockId, mockFile);
+        expect(service.updateImage).toHaveBeenCalledWith(
+          mockId,
+          mockFile
+        )
+        expect(mockResult).toBeInstanceOf(FunkoResponseDto)
+      })
+    })
 });

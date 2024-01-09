@@ -22,15 +22,13 @@ describe('FunkosMapper', () => {
     nombre: 'Funko Test',
     precio: 19.99,
     cantidad: 10,
-    imagen: 'cristianoronaldo.es',
     categoria: categoria.nombre,
   }
 
   const updateFunkoDto: UpdateFunkoDto = {
     nombre: 'Funko Actualizado',
     precio: 29.99,
-    cantidad: 15,
-    imagen: 'lionelmessi.es'
+    cantidad: 15
   }
 
   const funko: Funko = {
@@ -65,7 +63,6 @@ describe('FunkosMapper', () => {
     expect(actualFunko.nombre).toEqual(createFunkoDto.nombre);
     expect(actualFunko.precio).toEqual(createFunkoDto.precio);
     expect(actualFunko.cantidad).toEqual(createFunkoDto.cantidad);
-    expect(actualFunko.imagen).toEqual(createFunkoDto.imagen);
     expect(actualFunko.createdAt).toBeDefined();
     expect(actualFunko.updatedAt).toBeDefined();
     expect(actualFunko.categoria).toEqual(categoria);
@@ -80,7 +77,6 @@ describe('FunkosMapper', () => {
     expect(actualFunko.nombre).toEqual(updateFunkoDto.nombre);
     expect(actualFunko.precio).toEqual(updateFunkoDto.precio);
     expect(actualFunko.cantidad).toEqual(updateFunkoDto.cantidad);
-    expect(actualFunko.imagen).toEqual(updateFunkoDto.imagen);
     expect(actualFunko.createdAt).toEqual(funko.createdAt);
     expect(actualFunko.updatedAt).toBeDefined();
     expect(actualFunko.categoria).toEqual(categoria);
@@ -95,7 +91,6 @@ describe('FunkosMapper', () => {
     expect(actualResponse.nombre).toEqual(funko.nombre);
     expect(actualResponse.precio).toEqual(funko.precio);
     expect(actualResponse.cantidad).toEqual(funko.cantidad);
-    expect(actualResponse.imagen).toEqual(funko.imagen);
     expect(actualResponse.categoria).toEqual(funko.categoria.nombre);
     expect(actualResponse.isDeleted).toEqual(funko.isDeleted)
   });

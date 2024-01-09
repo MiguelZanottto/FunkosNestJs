@@ -9,12 +9,14 @@ import { FunkoResponseDto } from './dto/response-funko.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
+import { StorageService } from '../storage/storage.service';
 
 describe('FunkosService', () => {
   let service: FunkosService;
   let funkosRepository: Repository<Funko>;
   let categoriaRepository: Repository<Categoria>;
   let mapper: FunkosMapper;
+  let storageService: StorageService;
 
   const funkoMapperMock = {
     toCreateEntity: jest.fn(),
@@ -22,12 +24,17 @@ describe('FunkosService', () => {
     toResponseDto: jest.fn(),
   }
 
+  const storageServiceMock = {
+    removeFile: jest.fn()
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [FunkosService,
         {provide: getRepositoryToken(Funko), useClass: Repository},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
-        {provide: FunkosMapper, useValue: funkoMapperMock}
+        {provide: FunkosMapper, useValue: funkoMapperMock},
+        {provide: StorageService, useValue: storageServiceMock}
       ],
     }).compile();
 
@@ -35,6 +42,7 @@ describe('FunkosService', () => {
     funkosRepository = module.get(getRepositoryToken(Funko));
     categoriaRepository = module.get(getRepositoryToken(Categoria));
     mapper = module.get<FunkosMapper>(FunkosMapper);
+    storageService = module.get<StorageService>(StorageService);
   });
 
   it('should be defined', () => {
@@ -255,5 +263,30 @@ describe('FunkosService', () => {
 
       await expect(service.remove(1)).rejects.toThrow(NotFoundException);
     })
+  })
+
+  describe('updateImage', () => {
+    it("should update a funk image", async () => {
+      const mockFile = {
+        filename: 'new_image',
+      }
+      const mockFunk = new Funko();
+      const mockResponseDto = new FunkoResponseDto();
+
+      jest.spyOn(service, 'exists').mockResolvedValue(mockFunk);
+
+      jest
+        .spyOn(funkosRepository, 'save')
+        .mockResolvedValue(mockFunk)
+
+      jest
+        .spyOn(mapper, 'toResponseDto')
+        .mockReturnValue(mockResponseDto)
+
+      expect(
+        await service.updateImage(1, mockFile as any)
+      ).toEqual(mockResponseDto)
+      expect(storageService.removeFile).toHaveBeenCalled()
+    });
   })
 });

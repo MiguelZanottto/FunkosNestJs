@@ -35,15 +35,13 @@ describe('FunkosController (e2e)', () => {
     nombre: "Funko Test",
     precio: 12.99,
     cantidad: 45,
-    categoria: myCategoria.nombre,
-    imagen: 'test.png'
+    categoria: myCategoria.nombre
   }
 
   const updateFunkoDto: UpdateFunkoDto = {
     nombre: "Updated Funk",
     precio: 34.99,
-    cantidad: 90,
-    imagen: 'imageupdated.png',
+    cantidad: 90
   }
 
   const mockFunkosService = {
@@ -52,6 +50,8 @@ describe('FunkosController (e2e)', () => {
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    updateImage: jest.fn(),
+    exists: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -161,4 +161,20 @@ describe('FunkosController (e2e)', () => {
         .expect(404);
     });
   });
+
+  describe('PATCH /funkos/imagen/:id', () => {
+    it("should update the funk image", async () => {
+      const file = Buffer.from('file');
+
+      mockFunkosService.exists.mockResolvedValue(true);
+
+      mockFunkosService.updateImage.mockResolvedValue(funkoResponseDto)
+
+      await request(app.getHttpServer())
+        .patch(`${myEndpoint}/imagen/${funkoResponseDto.id}`)
+        .attach('file', file, 'image.jpg')
+        .set('Content-Type', 'multipart/form-data')
+        .expect(200)
+    });
+  })
 });
