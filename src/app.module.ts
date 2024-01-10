@@ -7,9 +7,11 @@ import { CategoriasModule } from './categorias/categorias.module';
 import { ConfigModule } from '@nestjs/config';
 import { StorageModule } from './storage/storage.module';
 import { NotificationsModule } from './websockets/notifications/notifications.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+    CacheModule.register(),
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',

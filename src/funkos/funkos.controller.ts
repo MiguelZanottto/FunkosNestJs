@@ -9,14 +9,18 @@ import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { v4 as uuidv4 } from 'uuid';
 import { FunkoExistsGuard } from './guards/funko-exists.guard';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('funkos')
+@UseInterceptors(CacheInterceptor)
 export class FunkosController {
   private readonly logger: Logger = new Logger(FunkosController.name);
 
   constructor(private readonly funkosService: FunkosService) {}
 
   @Get()
+  @CacheKey('all_funks')
+  @CacheTTL(20)
   @HttpCode(200)
   async findAll() {
     this.logger.log(`Searching all funks`)

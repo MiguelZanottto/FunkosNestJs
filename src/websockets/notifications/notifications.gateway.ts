@@ -21,19 +21,23 @@ export class NotificationsGateway {
   }
 
   sendMessage(notification: Notificacion<ResponseCategoriaDto | FunkoResponseDto>){
-    this.server.emit('updates', notification)
+    notification.entity == "FUNKOS" ? this.server.emit('funkos', notification) : this.server.emit('categorias', notification);
   }
 
   private handleConnection(client: Socket) {
     this.logger.debug('Cliente conectado:', client.id)
     this.server.emit(
       'connection',
-      'Updates Notifications WS - Tienda Funkos NestJS',
+      `Cliente ${client.id} conectado al sistema de notificaciones - Tienda FunkosJs`,
     )
   }
 
   private handleDisconnect(client: Socket) {
     console.log('Cliente desconectado:', client.id)
     this.logger.debug('Cliente desconectado:', client.id)
+    this.server.emit(
+      'logout',
+      `Cliente ${client.id} desconectado`
+    )
   }
 }

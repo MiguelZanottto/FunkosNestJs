@@ -7,6 +7,7 @@ import { Funko } from './entities/funko.entity';
 import { Categoria } from '../categorias/entities/categoria.entity';
 import { StorageModule } from '../storage/storage.module';
 import { NotificationsModule } from '../websockets/notifications/notifications.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports:[
@@ -14,6 +15,7 @@ import { NotificationsModule } from '../websockets/notifications/notifications.m
     TypeOrmModule.forFeature([Categoria]),
     StorageModule,
     NotificationsModule,
+    CacheModule.register(),
   ],
   controllers: [FunkosController],
   providers: [FunkosService, FunkosMapper],
