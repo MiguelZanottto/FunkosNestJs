@@ -8,14 +8,14 @@ import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 
 @Controller('categorias')
-@UseInterceptors(CacheInterceptor)
+//@UseInterceptors(CacheInterceptor)
 export class CategoriasController {
   private readonly logger: Logger = new Logger(CategoriasController.name)
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
   @CacheKey('all_categories')
-  @CacheTTL(30)
+  @CacheTTL(30000)
   async findAll() {
     this.logger.log(`Searching all categories`)
     return  await this.categoriasService.findAll();

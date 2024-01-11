@@ -44,7 +44,7 @@ export class FunkosService {
       .orderBy('funko.id', 'ASC')
       .getMany();
     const funkResponse = funkos.map((funko : Funko) => this.funkoMapper.toResponseDto(funko));
-    this.cacheManager.set('all_funks', funkResponse, 60)
+    this.cacheManager.set('all_funks', funkResponse, 60000)
     return funkResponse;
   }
 
@@ -67,7 +67,7 @@ export class FunkosService {
       throw new NotFoundException(`Funko con id ${id} no encontrado`)
     }
     const funkResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoFound);
-    await this.cacheManager.set(`funk_${id}`, funkResponse, 60);
+    await this.cacheManager.set(`funk_${id}`, funkResponse, 60000);
     return funkResponse;
   }
 
@@ -145,7 +145,7 @@ export class FunkosService {
       this.logger.log(`La categoria ${nombreCategoria} no existe en la database`)
       throw new BadRequestException(`La categoria con nombre ${nombreCategoria} no existe en la BD`)
     }
-    await this.cacheManager.set(`category_${nombreCategoria}`, categoriaFound, 60);
+    await this.cacheManager.set(`category_${nombreCategoria}`, categoriaFound, 60000);
     return categoriaFound;
   }
 
@@ -166,7 +166,7 @@ export class FunkosService {
       this.logger.log(`No se ha encontrado el funko con id: ${id}`)
       throw new NotFoundException(`Funko con id: ${id} no encontrado`)
     }
-    await this.cacheManager.set(`funk_entity_${id}`, funko, 60);
+    await this.cacheManager.set(`funk_entity_${id}`, funko, 60000);
     return funko;
   }
 

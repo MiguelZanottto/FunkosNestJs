@@ -20,7 +20,7 @@ export class FunkosController {
 
   @Get()
   @CacheKey('all_funks')
-  @CacheTTL(20)
+  @CacheTTL(30000)
   @HttpCode(200)
   async findAll() {
     this.logger.log(`Searching all funks`)

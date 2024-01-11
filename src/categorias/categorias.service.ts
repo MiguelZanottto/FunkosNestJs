@@ -37,7 +37,7 @@ export class CategoriasService {
     }
     const categorias : Categoria[] = await this.categoriasRepository.find();
     const categoriesResponse : ResponseCategoriaDto [] = categorias.map((categoria : Categoria) => this.categoriasMapper.toResponseDto(categoria));
-    await this.cacheManager.set('all_categories', categoriesResponse, 60);
+    await this.cacheManager.set('all_categories', categoriesResponse, 60000);
     return categoriesResponse;
   }
 
@@ -53,7 +53,7 @@ export class CategoriasService {
       this.logger.log(`No se ha encontrado la categoria con id: ${id}`)
       throw new NotFoundException(`Categoria con id: ${id} no encontrada`);
     }
-    await this.cacheManager.set(`category_${id}`, categoriaFound, 60);
+    await this.cacheManager.set(`category_${id}`, categoriaFound, 60000);
     return categoriaFound;
   }
 
@@ -136,7 +136,7 @@ export class CategoriasService {
         nombre: nombreCategoria.toLowerCase(),
       })
       .getOne();
-    await this.cacheManager.set(`category_name_${nombreCategoria}`, categoryFound, 60);
+    await this.cacheManager.set(`category_name_${nombreCategoria}`, categoryFound, 60000);
     return categoryFound;
   }
 
