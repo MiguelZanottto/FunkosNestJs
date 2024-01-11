@@ -7,6 +7,7 @@ import { FunkosController } from "../../../src/funkos/funkos.controller";
 import * as request from 'supertest'
 import { CreateFunkoDto } from "../../../src/funkos/dto/create-funko.dto";
 import { UpdateFunkoDto } from "../../../src/funkos/dto/update-funko.dto";
+import { CacheModule } from "@nestjs/cache-manager";
 
 describe('FunkosController (e2e)', () => {
   let app: INestApplication;
@@ -56,6 +57,7 @@ describe('FunkosController (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [FunkosController],
       providers: [
         FunkosService,

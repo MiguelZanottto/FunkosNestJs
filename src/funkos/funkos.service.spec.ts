@@ -11,6 +11,8 @@ import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
 import { StorageService } from '../storage/storage.service';
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager'
 
 describe('FunkosService', () => {
   let service: FunkosService;
@@ -19,6 +21,7 @@ describe('FunkosService', () => {
   let mapper: FunkosMapper;
   let storageService: StorageService;
   let notificationsGateway: NotificationsGateway;
+  let cacheManager: Cache;
 
   const funkoMapperMock = {
     toCreateEntity: jest.fn(),
@@ -34,6 +37,14 @@ describe('FunkosService', () => {
     sendMessage: jest.fn(),
   }
 
+  const cacheManagerMock = {
+    get: jest.fn(() => Promise.resolve()),
+    set: jest.fn(() => Promise.resolve()),
+    store: {
+      keys: jest.fn(),
+    },
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [FunkosService,
@@ -41,7 +52,8 @@ describe('FunkosService', () => {
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: FunkosMapper, useValue: funkoMapperMock},
         {provide: StorageService, useValue: storageServiceMock},
-        {provide: NotificationsGateway, useValue: notificationsGatewayMock}
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock},
+        { provide: CACHE_MANAGER, useValue: cacheManagerMock },
       ],
     }).compile();
 
@@ -53,6 +65,7 @@ describe('FunkosService', () => {
     notificationsGateway = module.get<NotificationsGateway>(
       NotificationsGateway
     )
+    cacheManager = module.get<Cache>(CACHE_MANAGER)
   });
 
   it('should be defined', () => {
@@ -69,7 +82,8 @@ describe('FunkosService', () => {
         orderBy: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue(result),
       }
-
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
       jest
         .spyOn(funkosRepository, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder as any)
@@ -89,11 +103,14 @@ describe('FunkosService', () => {
         where: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(result),
       }
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
       jest
         .spyOn(funkosRepository, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder as any)
 
       jest.spyOn(mapper, 'toResponseDto').mockReturnValue(resultDto)
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
       expect(await service.findOne(1)).toEqual(resultDto);
       expect(mapper.toResponseDto).toHaveBeenCalled()
@@ -129,11 +146,13 @@ describe('FunkosService', () => {
       jest.spyOn(mapper, 'toCreateEntity').mockReturnValue(funk)
       jest.spyOn(mapper, 'toResponseDto').mockReturnValue(resultDto)
       jest.spyOn(funkosRepository, 'save').mockResolvedValue(funk);
+      jest.spyOn(cacheManager.store, 'keys').mockResolvedValue([])
 
       expect(await service.create(funkCreateDto)).toEqual(resultDto)
       expect(mapper.toCreateEntity).toHaveBeenCalled()
       expect(funkosRepository.save).toHaveBeenCalled()
       expect(mapper.toResponseDto).toHaveBeenCalled()
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     })
 
     it("should throw an error if category doesn't exist", async () => {
@@ -177,6 +196,7 @@ describe('FunkosService', () => {
       expect(mapper.toResponseDto).toHaveBeenCalled();
       expect(mapper.toUpdateEntity).toHaveBeenCalled();
       expect(funkosRepository.save).toHaveBeenCalled();
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     })
 
 
@@ -220,6 +240,7 @@ describe('FunkosService', () => {
       expect(await service.remove(1)).toEqual(result);
       expect(funkosRepository.remove).toHaveBeenCalledTimes(1);
       expect(funkoMapperMock.toResponseDto).toHaveBeenCalled();
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     })
 
     it("should throw an error if funkoToDelete doesn't exist", async () => {
@@ -260,6 +281,7 @@ describe('FunkosService', () => {
       expect(actualResult.isDeleted).toBeTruthy();
       expect(funkosRepository.save).toHaveBeenCalled()
       expect(funkoMapperMock.toResponseDto).toHaveBeenCalled()
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     })
 
     it("should throw an error if funkoToDelete doesn't exist", async () => {
@@ -299,6 +321,7 @@ describe('FunkosService', () => {
         await service.updateImage(1, mockFile as any)
       ).toEqual(mockResponseDto)
       expect(storageService.removeFile).toHaveBeenCalled()
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
   })
 });

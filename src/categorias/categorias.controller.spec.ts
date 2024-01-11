@@ -6,6 +6,7 @@ import { Categoria } from './entities/categoria.entity';
 import { NotFoundException } from '@nestjs/common';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { CacheModule } from '@nestjs/cache-manager';
 
 describe('CategoriasController', () => {
   let controller: CategoriasController;
@@ -21,6 +22,7 @@ describe('CategoriasController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [CategoriasController],
       providers: [
         { provide: CategoriasService, useValue: mockCategoriaService},

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
 import { Funko } from './entities/funko.entity';
@@ -10,6 +10,8 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 import { Notificacion, NotificacionTipo } from '../websockets/notifications/models/notificacion.model';
 import { FunkoResponseDto } from './dto/response-funko.dto';
+import { Cache } from 'cache-manager'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
 
 @Injectable()
 export class FunkosService {
@@ -21,21 +23,40 @@ export class FunkosService {
               private readonly categoriaRepository: Repository<Categoria>,
               private readonly storageService:StorageService,
               private readonly funkoMapper: FunkosMapper,
-              private readonly notificationsGateway: NotificationsGateway) {
+              private readonly notificationsGateway: NotificationsGateway,
+              @Inject(CACHE_MANAGER) private cacheManager: Cache
+              ) {
   }
   async findAll() {
     this.logger.log('Mostrando todos los funkos');
+
+    const cache = await this.cacheManager.get(
+      'all_funks'
+    );
+
+    if (cache){
+      this.logger.log('Funkos recuperado de la cache');
+      return cache;
+    }
     const funkos : Funko[] = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
       .orderBy('funko.id', 'ASC')
       .getMany();
-
-    return funkos.map((funko : Funko) => this.funkoMapper.toResponseDto(funko));
+    const funkResponse = funkos.map((funko : Funko) => this.funkoMapper.toResponseDto(funko));
+    this.cacheManager.set('all_funks', funkResponse, 60)
+    return funkResponse;
   }
 
   async findOne(id: number) {
     this.logger.log(`Buscando un Funko con id: ${id}`);
+    const cache: FunkoResponseDto = await this.cacheManager.get(
+      `funk_${id}`
+    )
+    if(cache){
+     console.log('Funko recuperado de la cache');
+     return cache
+    }
     const funkoFound : Funko = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
@@ -45,8 +66,9 @@ export class FunkosService {
       this.logger.log(`Funko con id ${id} no encontrado`)
       throw new NotFoundException(`Funko con id ${id} no encontrado`)
     }
-
-    return this.funkoMapper.toResponseDto(funkoFound);
+    const funkResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoFound);
+    await this.cacheManager.set(`funk_${id}`, funkResponse, 60);
+    return funkResponse;
   }
 
   async create(createFunkoDto: CreateFunkoDto) {
@@ -56,6 +78,7 @@ export class FunkosService {
     const funkoCreated : Funko = await this.funkoRepository.save(funkoToCreate);
     const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoCreated);
     this.onChange(NotificacionTipo.CREATE, funkoResponse);
+    await this.invalidateCacheKey('all_funks');
     return funkoResponse;
   }
 
@@ -74,21 +97,9 @@ export class FunkosService {
     const funkoUpdated : Funko = await this.funkoRepository.save(funkoToUpdated);
     const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoUpdated);
     this.onChange(NotificacionTipo.UPDATE, funkoResponse);
+    await this.invalidateCacheKey(`funk_${id}`)
+    await this.invalidateCacheKey('all_funks')
     return funkoResponse;
-  }
-
-  public async findCategoria(nombreCategoria: string): Promise<Categoria>{
-    const categoriaFound : Categoria = await this.categoriaRepository
-      .createQueryBuilder()
-      .where('UPPER(nombre) = UPPER(:nombre)', {
-        nombre: nombreCategoria,
-      })
-      .getOne();
-    if(!categoriaFound){
-      this.logger.log(`La categoria ${nombreCategoria} no existe en la database`)
-      throw new BadRequestException(`La categoria con nombre ${nombreCategoria} no existe en la BD`)
-    }
-    return categoriaFound;
   }
 
   async remove(id: number) {
@@ -101,6 +112,8 @@ export class FunkosService {
     const funkoDeleted : Funko = await this.funkoRepository.remove(funkoToDelete);
     const funkoResponse : FunkoResponseDto = {...this.funkoMapper.toResponseDto(funkoDeleted), id : id, isDeleted : true};
     this.onChange(NotificacionTipo.DELETE, funkoResponse);
+    await this.invalidateCacheKey(`funk_${id}`);
+    await this.invalidateCacheKey(`all_funks`);
     return funkoResponse;
   }
 
@@ -109,10 +122,41 @@ export class FunkosService {
     const funkoDeleted : Funko = await this.funkoRepository.save({...funkoToDelete, isDeleted: true, updatedAt: Date.now()});
     const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoDeleted);
     this.onChange(NotificacionTipo.DELETE, funkoResponse);
+    await this.invalidateCacheKey(`funk_${id}`);
+    await this.invalidateCacheKey(`all_funks`);
     return funkoResponse;
   }
 
+  public async findCategoria(nombreCategoria: string): Promise<Categoria>{
+    const cache: Categoria = await this.cacheManager.get(
+      `category_${nombreCategoria}`
+    )
+    if (cache){
+      this.logger.log('Categoria recuperada de la cache');
+      return cache;
+    }
+    const categoriaFound : Categoria = await this.categoriaRepository
+      .createQueryBuilder()
+      .where('UPPER(nombre) = UPPER(:nombre)', {
+        nombre: nombreCategoria,
+      })
+      .getOne();
+    if(!categoriaFound){
+      this.logger.log(`La categoria ${nombreCategoria} no existe en la database`)
+      throw new BadRequestException(`La categoria con nombre ${nombreCategoria} no existe en la BD`)
+    }
+    await this.cacheManager.set(`category_${nombreCategoria}`, categoriaFound, 60);
+    return categoriaFound;
+  }
+
   public async exists(id:number): Promise<Funko>{
+    const cache: Funko = await this.cacheManager.get(
+      `funk_entity_${id}`
+    )
+    if (cache){
+      this.logger.log('Funko recuperado de la cache');
+      return cache;
+    }
     const funko = await this.funkoRepository
       .createQueryBuilder('funko')
       .leftJoinAndSelect('funko.categoria', 'categoria')
@@ -122,6 +166,7 @@ export class FunkosService {
       this.logger.log(`No se ha encontrado el funko con id: ${id}`)
       throw new NotFoundException(`Funko con id: ${id} no encontrado`)
     }
+    await this.cacheManager.set(`funk_entity_${id}`, funko, 60);
     return funko;
   }
 
@@ -151,6 +196,8 @@ export class FunkosService {
     const funkUpdated : Funko = await this.funkoRepository.save(funkToUpdate);
     const funkResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkUpdated);
     this.onChange(NotificacionTipo.UPDATE, funkResponse)
+    await this.invalidateCacheKey(`funk_${id}`)
+    await this.invalidateCacheKey('all_funks')
     return funkResponse;
   }
 
@@ -162,5 +209,11 @@ export class FunkosService {
       new Date(),
     )
     this.notificationsGateway.sendMessage(notificacion)
+  }
+  async invalidateCacheKey(keyPattern: string): Promise<void> {
+    const cacheKeys = await this.cacheManager.store.keys()
+    const keysToDelete = cacheKeys.filter((key) => key.startsWith(keyPattern))
+    const promises = keysToDelete.map((key) => this.cacheManager.del(key))
+    await Promise.all(promises)
   }
 }

@@ -5,6 +5,7 @@ import { FunkoResponseDto } from './dto/response-funko.dto';
 import { NotFoundException } from '@nestjs/common';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
+import { CacheModule } from '@nestjs/cache-manager';
 
 describe('FunkosController', () => {
   let controller: FunkosController;
@@ -21,6 +22,7 @@ describe('FunkosController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [FunkosController],
       providers: [
         {provide: FunkosService, useValue: funkosServiceMock},

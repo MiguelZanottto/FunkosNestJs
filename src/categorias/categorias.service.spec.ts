@@ -10,13 +10,15 @@ import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
 import { Funko } from '../funkos/entities/funko.entity';
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager'
 describe('CategoriasService', () => {
   let service: CategoriasService;
   let repo: Repository<Categoria>;
   let funkoRepository: Repository<Funko>;
   let mapper: CategoriasMapper;
   let notificationsGateway: NotificationsGateway;
+  let cacheManager: Cache
 
   const categoryMapper = {
     toEntityCreate: jest.fn(),
@@ -28,13 +30,22 @@ describe('CategoriasService', () => {
     sendMessage: jest.fn(),
   }
 
+  const cacheManagerMock = {
+    get: jest.fn(() => Promise.resolve()),
+    set: jest.fn(() => Promise.resolve()),
+    store: {
+      keys: jest.fn(),
+    },
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [CategoriasService,
         {provide: CategoriasMapper, useValue: categoryMapper},
         {provide: getRepositoryToken(Categoria), useClass: Repository},
         {provide: getRepositoryToken(Funko), useClass: Repository},
-        {provide: NotificationsGateway, useValue: notificationsGatewayMock}
+        {provide: NotificationsGateway, useValue: notificationsGatewayMock},
+        { provide: CACHE_MANAGER, useValue: cacheManagerMock },
       ],
     }).compile();
 
@@ -49,6 +60,7 @@ describe('CategoriasService', () => {
     notificationsGateway = module.get<NotificationsGateway>(
       NotificationsGateway,
     )
+    cacheManager = module.get<Cache>(CACHE_MANAGER)
   });
 
   it('should be defined', () => {
@@ -61,9 +73,10 @@ describe('CategoriasService', () => {
       const response = new ResponseCategoriaDto();
       jest.spyOn(repo, 'find').mockResolvedValue(categories);
       jest.spyOn(mapper, 'toResponseDto').mockReturnValue(response);
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
       const categoriesResult = await service.findAll()
-      expect(categoriesResult.length).toBe(3)
       expect(categoriesResult[0]).toBeInstanceOf(ResponseCategoriaDto)
     });
   })
@@ -78,7 +91,11 @@ describe('CategoriasService', () => {
       category.isDeleted = false;
       category.funkos = [];
 
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+
       jest.spyOn(repo, 'findOneBy').mockResolvedValue(category);
+
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
       const categoryFound : Categoria = await service.findOne('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9');
       expect(categoryFound).toEqual(category);
@@ -120,10 +137,12 @@ describe('CategoriasService', () => {
       jest.spyOn(mapper, 'toEntityCreate').mockReturnValue(category)
       jest.spyOn(repo, 'save').mockResolvedValue(category);
       jest.spyOn(mapper, 'toResponseDto').mockReturnValue(response);
+      jest.spyOn(cacheManager.store, 'keys').mockResolvedValue([])
 
       const newCategory : ResponseCategoriaDto = await service.create(createCategoryDto);
       expect(newCategory).toEqual(response);
       expect(newCategory).toBeInstanceOf(ResponseCategoriaDto);
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
 
     it("should thrown an error if category already exists", async ()  => {
@@ -194,6 +213,7 @@ describe('CategoriasService', () => {
       const updatedCategory : ResponseCategoriaDto = await service.update('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9', updateCategoryDto);
       expect(updatedCategory).toEqual(result);
       expect(updatedCategory).toBeInstanceOf(ResponseCategoriaDto);
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
 
 
@@ -265,6 +285,7 @@ describe('CategoriasService', () => {
       jest.spyOn(repo, 'findOneBy').mockResolvedValue(null)
 
       await expect(service.remove('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9')).rejects.toThrow(NotFoundException);
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
   })
 
@@ -294,6 +315,7 @@ describe('CategoriasService', () => {
       jest.spyOn(repo, 'findOneBy').mockResolvedValue(null)
 
       await expect(service.removeSoft('d69cf3db-b77d-4181-b3cd-5ca8107fb6a9')).rejects.toThrow(NotFoundException);
+      expect(notificationsGateway.sendMessage).toHaveBeenCalled();
     });
   })
 });

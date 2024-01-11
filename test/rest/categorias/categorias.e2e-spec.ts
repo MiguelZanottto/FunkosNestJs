@@ -7,6 +7,7 @@ import { UpdateCategoriaDto } from "../../../src/categorias/dto/update-categoria
 import { Categoria } from "../../../src/categorias/entities/categoria.entity";
 import * as request from 'supertest'
 import { ResponseCategoriaDto } from "../../../src/categorias/dto/response-categoria.dto";
+import { CacheModule } from "@nestjs/cache-manager";
 
 describe('CategoriasController (e2e)', () => {
   let app: INestApplication;
@@ -46,6 +47,7 @@ describe('CategoriasController (e2e)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [CategoriasController],
       providers: [
         CategoriasService,
