@@ -90,6 +90,7 @@ export class CategoriasService {
     const categoriaResponse : ResponseCategoriaDto = this.categoriasMapper.toResponseDto(categoriaUpdated);
     this.onChange(NotificacionTipo.UPDATE, categoriaResponse);
     await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaActual.nombre}`)
     await this.invalidateCacheKey('all_categories')
     return categoriaResponse;
   }
@@ -109,6 +110,7 @@ export class CategoriasService {
     const categoriaResponse : ResponseCategoriaDto = {...this.categoriasMapper.toResponseDto(categoriaDeleted), id: id, isDeleted: true};
     this.onChange(NotificacionTipo.DELETE, categoriaResponse);
     await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaToDelete.nombre}`)
     await this.invalidateCacheKey('all_categories')
     return categoriaResponse;
   }
@@ -120,6 +122,7 @@ export class CategoriasService {
     const categoryReponse : ResponseCategoriaDto = this.categoriasMapper.toResponseDto(categoriaDeleted);
     this.onChange(NotificacionTipo.DELETE, categoryReponse);
     await this.invalidateCacheKey(`category_${id}`)
+    await this.invalidateCacheKey(`category_name_${categoriaToDelete.nombre}`)
     await this.invalidateCacheKey('all_categories')
     return categoryReponse;
   }

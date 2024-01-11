@@ -98,6 +98,7 @@ export class FunkosService {
     const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoUpdated);
     this.onChange(NotificacionTipo.UPDATE, funkoResponse);
     await this.invalidateCacheKey(`funk_${id}`)
+    await this.invalidateCacheKey(`funk_entity_${id}`)
     await this.invalidateCacheKey('all_funks')
     return funkoResponse;
   }
@@ -113,6 +114,7 @@ export class FunkosService {
     const funkoResponse : FunkoResponseDto = {...this.funkoMapper.toResponseDto(funkoDeleted), id : id, isDeleted : true};
     this.onChange(NotificacionTipo.DELETE, funkoResponse);
     await this.invalidateCacheKey(`funk_${id}`);
+    await this.invalidateCacheKey(`funk_entity_${id}`)
     await this.invalidateCacheKey(`all_funks`);
     return funkoResponse;
   }
@@ -123,13 +125,14 @@ export class FunkosService {
     const funkoResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkoDeleted);
     this.onChange(NotificacionTipo.DELETE, funkoResponse);
     await this.invalidateCacheKey(`funk_${id}`);
+    await this.invalidateCacheKey(`funk_entity_${id}`)
     await this.invalidateCacheKey(`all_funks`);
     return funkoResponse;
   }
 
   public async findCategoria(nombreCategoria: string): Promise<Categoria>{
     const cache: Categoria = await this.cacheManager.get(
-      `category_${nombreCategoria}`
+      `category_name_${nombreCategoria}`
     )
     if (cache){
       this.logger.log('Categoria recuperada de la cache');
@@ -145,7 +148,7 @@ export class FunkosService {
       this.logger.log(`La categoria ${nombreCategoria} no existe en la database`)
       throw new BadRequestException(`La categoria con nombre ${nombreCategoria} no existe en la BD`)
     }
-    await this.cacheManager.set(`category_${nombreCategoria}`, categoriaFound, 60000);
+    await this.cacheManager.set(`category_name_${nombreCategoria}`, categoriaFound, 60000);
     return categoriaFound;
   }
 
@@ -197,6 +200,7 @@ export class FunkosService {
     const funkResponse : FunkoResponseDto = this.funkoMapper.toResponseDto(funkUpdated);
     this.onChange(NotificacionTipo.UPDATE, funkResponse)
     await this.invalidateCacheKey(`funk_${id}`)
+    await this.invalidateCacheKey(`funk_entity_${id}`)
     await this.invalidateCacheKey('all_funks')
     return funkResponse;
   }
