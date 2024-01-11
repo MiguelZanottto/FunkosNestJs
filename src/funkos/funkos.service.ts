@@ -54,7 +54,7 @@ export class FunkosService {
       `funk_${id}`
     )
     if(cache){
-     console.log('Funko recuperado de la cache');
+     this.logger.log('Funko recuperado de la cache');
      return cache
     }
     const funkoFound : Funko = await this.funkoRepository
