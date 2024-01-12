@@ -12,6 +12,8 @@ import { Notificacion, NotificacionTipo } from '../websockets/notifications/mode
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
+import { FilterOperator, FilterSuffix, PaginateQuery, paginate } from 'nestjs-paginate';
+import { hash } from 'typeorm/util/StringUtils';
 
 
 @Injectable()
@@ -28,17 +30,27 @@ export class CategoriasService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
-  async findAll() {
+  async findAll(query: PaginateQuery) {
     this.logger.log("Buscando todas las categorias");
-    const cache = await this.cacheManager.get('all_categories');
+    const cache = await this.cacheManager.get(`all_categories_page${hash(JSON.stringify(query))}`);
     if(cache){
       this.logger.log('Categorias recuperadas de la cache')
       return cache;
     }
-    const categorias : Categoria[] = await this.categoriasRepository.find();
-    const categoriesResponse : ResponseCategoriaDto [] = categorias.map((categoria : Categoria) => this.categoriasMapper.toResponseDto(categoria));
-    await this.cacheManager.set('all_categories', categoriesResponse, 60000);
-    return categoriesResponse;
+    const res = await paginate(query, this.categoriasRepository, {
+      sortableColumns: ['nombre'],
+      defaultSortBy:[['nombre', 'ASC']],
+      searchableColumns: ['nombre'],
+      filterableColumns: {
+        nombre: [FilterOperator.EQ, FilterSuffix.NOT],
+        isDeleted: [FilterOperator.EQ, FilterSuffix.NOT],
+      },
+      select: ['id', 'nombre', 'isDeleted']
+    })
+    await this.cacheManager.set(
+      `all_categories_page${hash(JSON.stringify(query))}`, res, 6000
+    );
+    return res;
   }
 
   async findOne(id: string) {

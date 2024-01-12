@@ -6,6 +6,7 @@ import { NotFoundException } from '@nestjs/common';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Paginated } from 'nestjs-paginate';
 
 describe('FunkosController', () => {
   let controller: FunkosController;
@@ -39,13 +40,34 @@ describe('FunkosController', () => {
 
   describe('findAll', () => {
     it('should return a response of all funks', async () => {
-      const expectedResult : FunkoResponseDto[] = [new FunkoResponseDto(), new FunkoResponseDto()];
+      const paginateOptions = {
+        page: 1,
+        limit: 10,
+        path: 'funkos'
+      }
+      const testFunkos = {
+        data: [],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+        links: {
+          current: 'funkos?page=1&limit=10&sortBy=nombre:ASC',
+        },
+      } as Paginated <FunkoResponseDto>
 
-      jest.spyOn(service, 'findAll').mockResolvedValue(expectedResult);
+      jest.spyOn(service, 'findAll').mockResolvedValue(testFunkos);
 
-      const actualResult = await controller.findAll();
-      expect(actualResult).toEqual(expectedResult);
-      expect(service.findAll).toHaveBeenCalled();
+      const result: any = await controller.findAll(paginateOptions);
+      expect(result.meta.itemsPerPage).toEqual(paginateOptions.limit);
+      expect(result.meta.currentPage).toEqual(paginateOptions.page);
+      expect(result.meta.totalPages).toEqual(1)
+      expect(result.links.current).toEqual(
+        `funkos?page=${paginateOptions.page}&limit=${paginateOptions.limit}&sortBy=nombre:ASC`
+      )
+      expect(service.findAll).toHaveBeenCalled()
     });
   })
 

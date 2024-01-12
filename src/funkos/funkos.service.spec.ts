@@ -13,6 +13,7 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
+import { Paginated } from 'nestjs-paginate';
 
 describe('FunkosService', () => {
   let service: FunkosService;
@@ -74,22 +75,51 @@ describe('FunkosService', () => {
 
   describe('findAll', () => {
     it('should return an array of funkos response', async () => {
-      const response: FunkoResponseDto = new FunkoResponseDto();
-      const result: FunkoResponseDto[] = [new FunkoResponseDto(), new FunkoResponseDto()];
+      const paginateOptions = {
+        page: 1,
+        limit: 10,
+        path: 'funkos'
+      }
+      const testFunkos = {
+        data: [],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+        links: {
+          current: 'funkos?page=1&limit=10&sortBy=nombre:ASC',
+        },
+      } as Paginated <FunkoResponseDto>
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
+      jest.spyOn(cacheManager, 'set').mockResolvedValue()
+
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(result),
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([]),
       }
-      jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
-      jest.spyOn(cacheManager, 'set').mockResolvedValue()
+
       jest
         .spyOn(funkosRepository, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder as any)
-      jest.spyOn(mapper, 'toResponseDto').mockReturnValue(response);
 
-    expect(await service.findAll()).toEqual(result)
+      jest.spyOn(mapper, 'toResponseDto').mockReturnValue(new FunkoResponseDto());
+
+      const result: any = await service.findAll(paginateOptions);
+
+      expect(result.meta.itemsPerPage).toEqual(paginateOptions.limit);
+      expect(result.meta.currentPage).toEqual(paginateOptions.page);
+      expect(result.links.current).toEqual(
+        `funkos?page=${paginateOptions.page}&limit=${paginateOptions.limit}&sortBy=id:ASC`
+      )
+      expect(cacheManager.get).toHaveBeenCalled()
+      expect(cacheManager.set).toHaveBeenCalled()
     })
   })
 

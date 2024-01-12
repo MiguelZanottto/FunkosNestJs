@@ -5,10 +5,11 @@ import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { UuidIdValidatorPipe } from '../pipes/validations/uuid-id-validator/uuid-id-validator.pipe';
 import { BodyNotEmptyValidatorPipe } from '../pipes/validations/body-not-empty-validator/body-not-empty-validator.pipe';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
 
 @Controller('categorias')
-//@UseInterceptors(CacheInterceptor)
+@UseInterceptors(CacheInterceptor)
 export class CategoriasController {
   private readonly logger: Logger = new Logger(CategoriasController.name)
   constructor(private readonly categoriasService: CategoriasService) {}
@@ -16,9 +17,9 @@ export class CategoriasController {
   @Get()
   @CacheKey('all_categories')
   @CacheTTL(30000)
-  async findAll() {
+  async findAll(@Paginate() query: PaginateQuery) {
     this.logger.log(`Searching all categories`)
-    return  await this.categoriasService.findAll();
+    return  await this.categoriasService.findAll(query);
   }
 
   @Get(':id')
