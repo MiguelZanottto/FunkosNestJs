@@ -7,6 +7,7 @@ import { NotFoundException } from '@nestjs/common';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Paginated } from 'nestjs-paginate';
 
 describe('CategoriasController', () => {
   let controller: CategoriasController;
@@ -39,11 +40,33 @@ describe('CategoriasController', () => {
 
   describe('findAll', () => {
     it('should return an array of categorias response', async () => {
-      const categories: ResponseCategoriaDto[] = []
-      jest.spyOn(service, 'findAll').mockResolvedValue(categories);
-      const result = await controller.findAll();
-      expect(result).toEqual(categories);
-      expect(service.findAll).toHaveBeenCalled();
+      const paginateOptions = {
+        page: 1,
+        limit: 10,
+        path: 'categorias',
+      }
+      const testCategorias = {
+        data: [],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+        links: {
+          current: 'categorias?page=1&limit=10&sortBy=nombre:ASC',
+        },
+      } as Paginated<ResponseCategoriaDto>
+
+      jest.spyOn(service, 'findAll').mockResolvedValue(testCategorias)
+      const result: any = await controller.findAll(paginateOptions)
+
+      expect(result.meta.itemsPerPage).toEqual(paginateOptions.limit)
+      expect(result.meta.currentPage).toEqual(paginateOptions.page)
+      expect(result.links.current).toEqual(
+        `categorias?page=${paginateOptions.page}&limit=${paginateOptions.limit}&sortBy=nombre:ASC`,
+      )
+      expect(service.findAll).toHaveBeenCalled()
     })
   })
 

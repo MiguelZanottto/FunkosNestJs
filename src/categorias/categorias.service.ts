@@ -12,8 +12,9 @@ import { Notificacion, NotificacionTipo } from '../websockets/notifications/mode
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
-import { FilterOperator, FilterSuffix, PaginateQuery, paginate } from 'nestjs-paginate';
+
 import { hash } from 'typeorm/util/StringUtils';
+import { FilterOperator, FilterSuffix, PaginateQuery, paginate } from 'nestjs-paginate';
 
 
 @Injectable()
@@ -37,7 +38,7 @@ export class CategoriasService {
       this.logger.log('Categorias recuperadas de la cache')
       return cache;
     }
-    const res = await paginate(query, this.categoriasRepository, {
+    const pagination = await paginate(query, this.categoriasRepository, {
       sortableColumns: ['nombre'],
       defaultSortBy:[['nombre', 'ASC']],
       searchableColumns: ['nombre'],
@@ -45,8 +46,16 @@ export class CategoriasService {
         nombre: [FilterOperator.EQ, FilterSuffix.NOT],
         isDeleted: [FilterOperator.EQ, FilterSuffix.NOT],
       },
-      select: ['id', 'nombre', 'isDeleted']
+      // select: ['id', 'nombre', 'isDeleted']
     })
+    const res = {
+      data: (pagination.data ?? []).map((categoria) =>
+        this.categoriasMapper.toResponseDto(categoria),
+        ),
+      meta: pagination.meta,
+      links: pagination.links,
+    }
+
     await this.cacheManager.set(
       `all_categories_page${hash(JSON.stringify(query))}`, res, 6000
     );

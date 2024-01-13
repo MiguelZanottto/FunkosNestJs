@@ -12,6 +12,7 @@ import { Funko } from '../funkos/entities/funko.entity';
 import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
+import { Paginated } from 'nestjs-paginate';
 describe('CategoriasService', () => {
   let service: CategoriasService;
   let repo: Repository<Categoria>;
@@ -69,15 +70,51 @@ describe('CategoriasService', () => {
 
   describe('findAll', () => {
     it("should return an array of responses categories", async ()  => {
-      const categories = [new Categoria(), new Categoria(), new Categoria()]
-      const response = new ResponseCategoriaDto();
-      jest.spyOn(repo, 'find').mockResolvedValue(categories);
-      jest.spyOn(mapper, 'toResponseDto').mockReturnValue(response);
+      const paginateOptions = {
+        page: 1,
+        limit: 10,
+        path: 'categorias'
+      }
+
+      const testCategorias = {
+        data: [],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+        },
+        links: {
+          current: 'categorias?page=1&limit=10&sortBy=nombre:ASC'
+        },
+      } as Paginated<ResponseCategoriaDto>
+
       jest.spyOn(cacheManager, 'get').mockResolvedValue(Promise.resolve(null))
       jest.spyOn(cacheManager, 'set').mockResolvedValue()
 
-      const categoriesResult = await service.findAll()
-      expect(categoriesResult[0]).toBeInstanceOf(ResponseCategoriaDto)
+      const mockQueryBuilder = {
+        take: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([]),
+      }
+      jest
+        .spyOn(repo, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any)
+
+      jest
+        .spyOn(mapper, 'toResponseDto')
+        .mockReturnValue(new ResponseCategoriaDto())
+
+      const result: any = await service.findAll(paginateOptions);
+
+      expect(result.meta.itemsPerPage).toEqual(paginateOptions.limit);
+      expect(result.meta.currentPage).toEqual(paginateOptions.page)
+      expect(result.links.current).toEqual(
+        `categorias?page=${paginateOptions.page}&limit=${paginateOptions.limit}&sortBy=nombre:ASC`
+      )
+      expect(cacheManager.get).toHaveBeenCalled()
+      expect(cacheManager.set).toHaveBeenCalled()
     });
   })
 
