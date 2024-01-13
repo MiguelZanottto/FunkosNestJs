@@ -10,7 +10,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateFunkoDto } from './dto/create-funko.dto';
 import { UpdateFunkoDto } from './dto/update-funko.dto';
 import { StorageService } from '../storage/storage.service';
-import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
+import { NotificationsGateway } from '../../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
 import { Paginated } from 'nestjs-paginate';

@@ -9,7 +9,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateCategoriaDto } from "./dto/create-categoria.dto";
 import { UpdateCategoriaDto } from "./dto/update-categoria.dto";
 import { Funko } from '../funkos/entities/funko.entity';
-import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
+import { NotificationsGateway } from '../../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
 import { Paginated } from 'nestjs-paginate';

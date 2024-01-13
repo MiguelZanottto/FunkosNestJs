@@ -7,8 +7,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Categoria } from '../categorias/entities/categoria.entity';
 import { StorageService } from '../storage/storage.service';
-import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
-import { Notificacion, NotificacionTipo } from '../websockets/notifications/models/notificacion.model';
+import { NotificationsGateway } from '../../websockets/notifications/notifications.gateway';
+import { Notificacion, NotificacionTipo } from '../../websockets/notifications/models/notificacion.model';
 import { FunkoResponseDto } from './dto/response-funko.dto';
 import { Cache } from 'cache-manager'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'

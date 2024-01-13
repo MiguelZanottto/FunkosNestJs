@@ -4,7 +4,7 @@ import { CreateFunkoDto } from "../dto/create-funko.dto";
 import { FunkoResponseDto } from "../dto/response-funko.dto";
 import { Funko } from "../entities/funko.entity";
 import { UpdateFunkoDto } from "../dto/update-funko.dto";
-import { Categoria } from "src/categorias/entities/categoria.entity";
+import { Categoria } from "../../categorias/entities/categoria.entity";
 
 @Injectable()
 export class FunkosMapper{

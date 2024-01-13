@@ -8,8 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseCategoriaDto } from './dto/response-categoria.dto';
 import { Funko } from '../funkos/entities/funko.entity';
-import { Notificacion, NotificacionTipo } from '../websockets/notifications/models/notificacion.model';
-import { NotificationsGateway } from '../websockets/notifications/notifications.gateway';
+import { Notificacion, NotificacionTipo } from '../../websockets/notifications/models/notificacion.model';
+import { NotificationsGateway } from '../../websockets/notifications/notifications.gateway';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager'
 

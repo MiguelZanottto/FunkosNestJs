@@ -1,12 +1,12 @@
 import { INestApplication, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { CategoriasController } from "../../../src/categorias/categorias.controller";
-import { CategoriasService } from "../../../src/categorias/categorias.service";
-import { CreateCategoriaDto } from "../../../src/categorias/dto/create-categoria.dto";
-import { UpdateCategoriaDto } from "../../../src/categorias/dto/update-categoria.dto";
-import { Categoria } from "../../../src/categorias/entities/categoria.entity";
+import { CategoriasController } from "../../../src/rest/categorias/categorias.controller";
+import { CategoriasService } from "../../../src/rest/categorias/categorias.service";
+import { CreateCategoriaDto } from "../../../src/rest/categorias/dto/create-categoria.dto";
+import { UpdateCategoriaDto } from "../../../src/rest/categorias/dto/update-categoria.dto";
+import { Categoria } from "../../../src/rest/categorias/entities/categoria.entity";
 import * as request from 'supertest'
-import { ResponseCategoriaDto } from "../../../src/categorias/dto/response-categoria.dto";
+import { ResponseCategoriaDto } from "../../../src/rest/categorias/dto/response-categoria.dto";
 import { CacheModule } from "@nestjs/cache-manager";
 
 describe('CategoriasController (e2e)', () => {

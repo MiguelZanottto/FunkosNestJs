@@ -1,12 +1,12 @@
 import { INestApplication, NotFoundException } from "@nestjs/common";
-import { FunkoResponseDto } from "../../../src/funkos/dto/response-funko.dto";
-import { Categoria } from "../../../src/categorias/entities/categoria.entity";
+import { FunkoResponseDto } from "../../../src/rest/funkos/dto/response-funko.dto";
+import { Categoria } from "../../../src/rest/categorias/entities/categoria.entity";
 import { Test, TestingModule } from "@nestjs/testing";
-import { FunkosService } from "../../../src/funkos/funkos.service";
-import { FunkosController } from "../../../src/funkos/funkos.controller";
+import { FunkosService } from "../../../src/rest/funkos/funkos.service";
+import { FunkosController } from "../../../src/rest/funkos/funkos.controller";
 import * as request from 'supertest'
-import { CreateFunkoDto } from "../../../src/funkos/dto/create-funko.dto";
-import { UpdateFunkoDto } from "../../../src/funkos/dto/update-funko.dto";
+import { CreateFunkoDto } from "../../../src/rest/funkos/dto/create-funko.dto";
+import { UpdateFunkoDto } from "../../../src/rest/funkos/dto/update-funko.dto";
 import { CacheModule } from "@nestjs/cache-manager";
 
 describe('FunkosController (e2e)', () => {

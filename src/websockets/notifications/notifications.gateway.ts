@@ -2,8 +2,8 @@ import { Logger } from '@nestjs/common';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io'
 import { Notificacion } from './models/notificacion.model';
-import { ResponseCategoriaDto } from '../../categorias/dto/response-categoria.dto';
-import { FunkoResponseDto } from '../../funkos/dto/response-funko.dto';
+import { ResponseCategoriaDto } from '../../rest/categorias/dto/response-categoria.dto';
+import { FunkoResponseDto } from '../../rest/funkos/dto/response-funko.dto';
 
 const ENDPOINT: string = `/ws/${process.env.API_VERSION || 'v1'}/notifications`
 
