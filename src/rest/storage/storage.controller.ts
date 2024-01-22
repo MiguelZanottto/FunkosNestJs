@@ -5,7 +5,9 @@ import { Request, Response } from 'express'
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
+import { ApiNotFoundResponse, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 @Controller('storage')
+@ApiTags('Storage')
 export class StorageController {
   private readonly logger = new Logger(StorageController.name);
   constructor(private readonly storageService: StorageService) {}
@@ -50,6 +52,20 @@ export class StorageController {
   }
 
   @Get(':filename')
+  @ApiResponse({
+    status: 200,
+    description:
+      'El fichero se ha encontrado y se devuelve el fichero en la respuesta',
+    type: String,
+  })
+  @ApiParam({
+    name: 'filename',
+    description: 'Nombre del fichero',
+    type: String,
+  })
+  @ApiNotFoundResponse({
+    description: 'El fichero no existe',
+  })
   getFile(@Param('filename') filename: string, @Res() res: Response){
     this.logger.log(`Buscando fichero ${filename}`)
     const filePath = this.storageService.findFile(filename)

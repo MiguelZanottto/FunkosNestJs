@@ -50,7 +50,7 @@ export class FunkosMapper{
     response.cantidad = funko.cantidad;
     response.imagen = funko.imagen == Funko.IMAGE_DEFAULT
       ? funko.imagen
-      : `${process.env.API_PROTOCOL || 'http'}://${process.env.API_HOST || 'localhost'}:${process.env.API_PORT || '3000'}/${process.env.API_VERSION || 'v1'}/storage/${funko.imagen}`;
+      : `${process.env.API_PROTOCOL || 'https'}://${process.env.API_HOST || 'localhost'}:${process.env.API_PORT || '3000'}/${process.env.API_VERSION || 'v1'}/storage/${funko.imagen}`;
     response.isDeleted = funko.isDeleted;
     return response
     }

@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { FunkosModule } from './rest/funkos/funkos.module';
 import { CategoriasModule } from './rest/categorias/categorias.module';
 import { ConfigModule } from '@nestjs/config';
@@ -9,11 +7,19 @@ import { NotificationsModule } from './websockets/notifications/notifications.mo
 import { CacheModule } from '@nestjs/cache-manager';
 import { DatabaseModule } from './config/database/database.module';
 import { PedidosModule } from './rest/pedidos/pedidos.module';
-
+import { AuthModule } from './rest/auth/auth.module';
+import { UsersModule } from './rest/users/users.module';
+import { CorsConfigModule } from './config/cors/cors.module';
+import * as process from 'process'
 @Module({
   imports: [
+    ConfigModule.forRoot(
+      process.env.NODE_ENV === 'dev'
+        ? { envFilePath: '.env.dev' || '.env' }
+        : { envFilePath: '.env.prod' },
+    ),
+    CorsConfigModule,
     CacheModule.register(),
-    ConfigModule.forRoot(),
     DatabaseModule,
     FunkosModule,
     CategoriasModule,
@@ -21,8 +27,9 @@ import { PedidosModule } from './rest/pedidos/pedidos.module';
     NotificationsModule,
     DatabaseModule,
     PedidosModule,
+    AuthModule,
+    UsersModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

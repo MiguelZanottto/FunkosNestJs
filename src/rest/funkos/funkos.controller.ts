@@ -10,10 +10,16 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { v4 as uuidv4 } from 'uuid';
 import { FunkoExistsGuard } from './guards/funko-exists.guard';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
-import { Paginate, PaginateQuery } from 'nestjs-paginate';
+import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
+import { Roles, RolesAuthGuard } from '../auth/guards/roles-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody,
+  ApiConsumes, ApiNotFoundResponse, ApiParam, ApiProperty, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FunkoResponseDto } from './dto/response-funko.dto';
 
 @Controller('funkos')
 @UseInterceptors(CacheInterceptor)
+@ApiTags('Funkos')
 export class FunkosController {
   private readonly logger: Logger = new Logger(FunkosController.name);
 
@@ -21,14 +27,65 @@ export class FunkosController {
 
   @Get()
   @CacheKey('all_funks')
-  @CacheTTL(30000)
-  @HttpCode(200)
+  @CacheTTL(3)
+  @ApiResponse({
+    status: 200,
+    description:
+      'Lista de funkos paginada. Se puede filtrar por limite, pagina sortBy, filter y search',
+    type: Paginated<FunkoResponseDto>,
+  })
+  @ApiQuery({
+    description: 'Filtro por limite por pagina',
+    name: 'limit',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    description: 'Filtro por pagina',
+    name: 'page',
+    required: false,
+    type: Number,
+  })
+  @ApiQuery({
+    description: 'Filtro de ordenación: campo:ASC|DESC',
+    name: 'sortBy',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    description: 'Filtro de busqueda: filter.campo = $eq:valor',
+    name: 'filter',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    description: 'Filtro de busqueda: search = valor',
+    name: 'search',
+    required: false,
+    type: String,
+  })
   async findAll(@Paginate() query: PaginateQuery) {
     this.logger.log(`Searching all funks`)
     return await this.funkosService.findAll(query);
   }
 
   @Get(':id')
+  @ApiResponse({
+    status: 200,
+    description: 'Funko encontrado',
+    type: FunkoResponseDto,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del funko',
+    type: Number,
+  })
+  @ApiNotFoundResponse({
+    description: 'Funko no encontrado',
+  })
+  @ApiBadRequestResponse({
+    description: 'El id del funko no es válido',
+  })
   async findOne(@Param('id', new NumericIdValidatorPipe()) id: number) {
     this.logger.log(`Searching funk by id: ${id}`)
     return await this.funkosService.findOne(id);
@@ -36,12 +93,33 @@ export class FunkosController {
 
   @Post()
   @HttpCode(201)
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
   async create(@Body() createFunkoDto: CreateFunkoDto) {
     this.logger.log(`Creating funk`)
     return await this.funkosService.create(createFunkoDto);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 201,
+    description: 'Funko creado',
+    type: FunkoResponseDto,
+  })
+  @ApiBody({
+    description: 'Datos del funko a crear',
+    type: CreateFunkoDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'El algunos de los campos no es válido según la especificación del DTO',
+  })
+  @ApiBadRequestResponse({
+    description: 'La categoría no existe o no es válida',
+  })
   async update(@Param('id', new NumericIdValidatorPipe()) id: number, @Body(new BodyNotEmptyValidatorPipe()) updateFunkoDto: UpdateFunkoDto) {
     this.logger.log(`Updating funk by id: ${id}`);
     return await this.funkosService.update(id, updateFunkoDto);
@@ -49,13 +127,67 @@ export class FunkosController {
 
   @Delete(':id')
   @HttpCode(204)
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth() // Indicar que se requiere autenticación con JWT en Swagger
+  @ApiResponse({
+    status: 204,
+    description: 'Funko eliminado',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del funko',
+    type: Number,
+  })
+  @ApiNotFoundResponse({
+    description: 'Funko no encontrado',
+  })
+  @ApiBadRequestResponse({
+    description: 'El id del funko no es válido',
+  })
   async remove(@Param('id', new NumericIdValidatorPipe()) id: number) {
     this.logger.log(`Deleting funk by id: ${id}`)
     return await this.funkosService.remove(id);
   }
 
   @Patch('/imagen/:id')
+  @UseGuards(JwtAuthGuard, RolesAuthGuard)
+  @Roles('ADMIN')
   @UseGuards(FunkoExistsGuard)
+  @ApiBearerAuth() // Indicar que se requiere autenticación con JWT en Swagger
+  @ApiResponse({
+    status: 200,
+    description: 'Imagen actualizada',
+    type: FunkoResponseDto,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del funko',
+    type: Number,
+  })
+  @ApiProperty({
+    name: 'file',
+    description: 'Fichero de imagen',
+    type: 'string',
+    format: 'binary',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Fichero de imagen',
+    type: FileInterceptor('file'),
+  })
+  @ApiNotFoundResponse({
+    description: 'Funko no encontrado',
+  })
+  @ApiBadRequestResponse({
+    description: 'El id del funko no es válido',
+  })
+  @ApiBadRequestResponse({
+    description: 'El fichero no es válido o de un tipo no soportado',
+  })
+  @ApiBadRequestResponse({
+    description: 'El fichero no puede ser mayor a 1 megabyte',
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
