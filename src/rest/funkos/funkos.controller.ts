@@ -95,6 +95,22 @@ export class FunkosController {
   @HttpCode(201)
   @UseGuards(JwtAuthGuard, RolesAuthGuard)
   @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 201,
+    description: 'Funko Creado',
+    type: FunkoResponseDto
+  })
+  @ApiBody({
+    description: "Datos del funko a crear",
+    type: CreateFunkoDto
+  })
+  @ApiBadRequestResponse({
+    description: "Algun campo del body es invalido"
+  })
+  @ApiBadRequestResponse({
+    description: "La categoria no existe o no es válida"
+  })
   async create(@Body() createFunkoDto: CreateFunkoDto) {
     this.logger.log(`Creating funk`)
     return await this.funkosService.create(createFunkoDto);
@@ -115,7 +131,7 @@ export class FunkosController {
   })
   @ApiBadRequestResponse({
     description:
-      'El algunos de los campos no es válido según la especificación del DTO',
+      'Algunos de los campos no es válido según la especificación del DTO',
   })
   @ApiBadRequestResponse({
     description: 'La categoría no existe o no es válida',
